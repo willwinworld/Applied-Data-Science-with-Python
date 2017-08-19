@@ -42,16 +42,39 @@ def get_recession_end():
     gdp = gdp[['Unnamed: 4', 'Unnamed: 5']]
     gdp = gdp.loc[212:]
     gdp.columns = ['Quarter', 'GDP']
+    # print(gdp)
     gdp['GDP'] = pd.to_numeric(gdp['GDP'])
     start = get_recession_start()
+    print(start)
     start_index = int(gdp.loc[gdp['Quarter'] == start].index[0])
+    print(start_index)
+    # print(gdp)
+    # gdp = gdp.iloc[start_index:]
     gdp = gdp.loc[start_index:]
+    print(gdp)
     quarters = []
     for i in range(len(gdp) - 2):
         if (gdp.iloc[i][1] < gdp.iloc[i+1][1]) and (gdp.iloc[i+1][1] < gdp.iloc[i+2][1]):
-            quarters.append(gdp.iloc[i][0])
-    # print(quarters)
-    return quarters[0]
+            quarters.append(gdp.iloc[i+2][0])
+    print(quarters)
+    # return quarters[0]
+    gdplev = pd.ExcelFile('gdplev.xls')
+
+    gdplev = gdplev.parse("Sheet1", skiprows=219)  # 跳过前面219行,从2000q1季度开始，删除前面的后，GDP in billions of current dollars也被去除了，变成了218行的数据， 1994q4，还有9926.1
+    # print('-------------------------------------')
+    # print(gdplev)
+    # print('-------------------------------------')
+    gdplev = gdplev[['1999q4', 9926.1]]
+    # print(gdplev)
+    gdplev.columns = ['Quarter', 'GDP']
+    start = get_recession_start()
+    start_index = gdplev[gdplev['Quarter'] == start].index.tolist()[0]
+    print(start_index)
+    gdplev = gdplev.iloc[start_index:]
+    print(gdplev)
+    for i in range(2, len(gdplev)):
+        if (gdplev.iloc[i - 2][1] < gdplev.iloc[i - 1][1]) and (gdplev.iloc[i - 1][1] < gdplev.iloc[i][1]):
+            return gdplev.iloc[i][0]
 
 
 def get_recession_bottom():
@@ -72,66 +95,50 @@ def get_recession_bottom():
     return gdp_bottom['Quarter']
 
 
-# def new_col_names():
-#     # generating the new coloumns names
-#     years = list(range(2000, 2017))
-#     quars = ['q1', 'q2', 'q3', 'q4']
-#     quar_years = []
-#     for i in years:
-#         for x in quars:
-#             quar_years.append((str(i) + x))
-#     # print(quar_years[:67])
-#     return quar_years[:67]
-#
-#
-# def convert_housing_data_to_quarters1():
-#     '''Converts the housing data to quarters and returns it as mean
-#     values in a dataframe. This dataframe should be a dataframe with
-#     columns for 2000q1 through 2016q3, and should have a multi-index
-#     in the shape of ["State","RegionName"].
-#
-#     Note: Quarters are defined in the assignment description, they are
-#     not arbitrary three month periods.
-#
-#     The resulting dataframe should have 67 columns, and 10,730 rows.
-#     '''
-#     data = pd.read_csv('City_Zhvi_AllHomes.csv')
-#     data.drop(['Metro', 'CountyName', 'RegionID', 'SizeRank'], axis=1, inplace=True)
-#     data['State'] = data['State'].map(states)
-#     data.set_index(['State', 'RegionName'], inplace=True)
-#     col = list(data.columns)
-#     col = col[0:45]
-#     data.drop(col, axis=1, inplace=True)
-#
-#     # qs is the quarters of the year
-#     qs = [list(data.columns)[x:x + 3] for x in range(0, len(list(data.columns)), 3)]
-#
-#     # new columns
-#     column_names = new_col_names()
-#     for col, q in zip(column_names, qs):
-#         data[col] = data[q].mean(axis=1)
-#
-#     data = data[column_names]
-#     # print(data)
-#     return data
+def new_col_names():
+    years = list(range(2000, 2017))
+    quarters = ['q1', 'q2', 'q3', 'q4']
+    quarter_years = []
+    for y in years:
+        for q in quarters:
+            quarter_years.append(str(y)+q)
+    return quarter_years[:67]
 
 
 def convert_housing_data_to_quarters():
-    hdata = pd.read_csv('City_Zhvi_AllHomes.csv')
-    hdata = hdata.drop(hdata.columns[[0]+list(range(3,51))], axis=1)
-    target = pd.DataFrame(hdata[['State', 'RegionName']])
-    for year in range(2000, 2016):
-        target[str(year)+'q1'] = hdata[[str(year)+'-01', str(year)+'-02', str(year)+'-03']].mean(axis=1)
-        target[str(year)+'q2'] = hdata[[str(year)+'-04', str(year)+'-05', str(year)+'-06']].mean(axis=1)
-        target[str(year)+'q3'] = hdata[[str(year)+'-07', str(year)+'-08', str(year)+'-09']].mean(axis=1)
-        target[str(year)+'q4'] = hdata[[str(year)+'-10', str(year)+'-11', str(year)+'-12']].mean(axis=1)
-    year = 2016
-    target[str(year) + 'q1'] = hdata[[str(year) + '-01', str(year) + '-02', str(year) + '-03']].mean(axis=1)
-    target[str(year) + 'q2'] = hdata[[str(year) + '-04', str(year) + '-05', str(year) + '-06']].mean(axis=1)
-    target[str(year) + 'q3'] = hdata[[str(year) + '-07', str(year) + '-08', str(year) + '-09']].mean(axis=1)
-    target = target.set_index(['State', 'RegionName'])
-    # print(target)
-    return target
+    """
+    2000q1 through 2016q3
+    2000年1月 - 2016年9月
+    :return:
+    """
+    housing_data = pd.read_csv("City_Zhvi_AllHomes.csv")
+    housing_data['State'] = housing_data['State'].map(states)
+    state = housing_data['State']
+    region = housing_data['RegionName']
+    period = housing_data.loc[:, '2000-01': '2016-08']
+    raw = pd.concat([state, region, period], axis=1).set_index(['State', 'RegionName'])
+    res = raw.groupby(pd.PeriodIndex(raw.columns, freq='Q'), axis=1).mean()
+    # print(res)
+    return res
+    # print('-------------------------------------------------------')
+    # data = pd.read_csv('City_Zhvi_AllHomes.csv')
+    # data.drop(['Metro', 'CountyName', 'RegionID', 'SizeRank'], axis=1, inplace=True)
+    # data['State'] = data['State'].map(states)
+    # data.set_index(['State', 'RegionName'], inplace=True)
+    # col = list(data.columns)
+    # col = col[0:45]
+    # data.drop(col, axis=1, inplace=True)
+    # qs = [list(data.columns)[x:x+3] for x in range(0, len(list(data.columns)), 3)]
+    #
+    # column_names = new_col_names()
+    # for col, q in zip(column_names, qs):
+    #     data[col] = data[q].mean(axis=1)
+    #
+    # data = data[column_names]
+    # return data
+
+
+
 
 
 def run_ttest():
@@ -153,51 +160,53 @@ def run_ttest():
     """
     housing_data = convert_housing_data_to_quarters()
     data = housing_data.loc[:, '2008q3': '2009q2']
+    print(data)
     # print(data.head())
-    data = data.reset_index()
+    # data = data.reset_index()
     # print('-----------------')
     # print(data.head())
 
-    def price_change(row):
-        return (row['2008q3'] - row['2009q2']) / row['2008q3']
-    data['up&down'] = data.apply(price_change, axis=1)
+    # def price_change(row):
+    #     return (row['2008q3'] - row['2009q2']) / row['2008q3']
+    # data['up&down'] = data.apply(price_change, axis=1)
     # print(data.head())
 
-    university_towns = get_list_of_university_towns()['RegionName']
-    university_towns = set(university_towns)
-
-    def is_uni_town(row):
-        if row['RegionName'] in university_towns:
-            return 1
-        else:
-            return 0
-    data['is_uni'] = data.apply(is_uni_town, axis=1)
-
-    not_uni = data[data['is_uni']==0].loc[:, 'up&down'].dropna()
-    is_uni = data[data['is_uni']==1].loc[:, 'up&down'].dropna()
-
-    def better():
-        if not_uni.mean() < is_uni.mean():
-            return 'non-university town'
-        else:
-            return 'university town'
-    p_val = ttest_ind(not_uni, is_uni)[1]
-    print(p_val)
-    res = (True, p_val, better())
-    print(res)
-    return res
+    # university_towns = get_list_of_university_towns()['RegionName']
+    # university_towns = set(university_towns)
+    #
+    # def is_uni_town(row):
+    #     if row['RegionName'] in university_towns:
+    #         return 1
+    #     else:
+    #         return 0
+    # data['is_uni'] = data.apply(is_uni_town, axis=1)
+    #
+    # not_uni = data[data['is_uni']==0].loc[:, 'up&down'].dropna()
+    # is_uni = data[data['is_uni']==1].loc[:, 'up&down'].dropna()
+    #
+    # def better():
+    #     if not_uni.mean() < is_uni.mean():
+    #         return 'non-university town'
+    #     else:
+    #         return 'university town'
+    # p_val = ttest_ind(not_uni, is_uni)[1]
+    # print(p_val)
+    # res = (True, p_val, better())
+    # print(res)
+    # return res
 
 
 if __name__ == "__main__":
     # res1 = get_list_of_university_towns()
-    # res2 = get_recession_start()
-    # print(res2)
-    # get_recession_end()
-    # res3 = get_recession_bottom()
+    res2 = get_recession_start()
+    print(res2)
+    # test = get_recession_end()
+    # print(test)
+    res3 = get_recession_bottom()
     # print(res1)
     # print(res2)
-    # print(res3)
+    print(res3)
     # print(res4)
+    # new_col_names()
     # convert_housing_data_to_quarters()
-    # convert_housing_data_to_quarters1()
-    run_ttest()
+    # run_ttest()
