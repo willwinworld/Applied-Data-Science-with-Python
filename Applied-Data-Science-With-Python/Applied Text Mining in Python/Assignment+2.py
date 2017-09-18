@@ -13,7 +13,7 @@
 
 # ## Part 1 - Analyzing Moby Dick
 
-# In[3]:
+# In[2]:
 
 import nltk
 import pandas as pd
@@ -106,7 +106,7 @@ answer_one()
 # 
 # *This function should return a float.*
 
-# In[21]:
+# In[3]:
 
 def answer_two():
     total_word_list = nltk.word_tokenize(moby_raw)
@@ -117,7 +117,7 @@ def answer_two():
         if word == word_list[0] or word == word_list[1]:
             count += 1
     float_res = count / len(total_word_list)
-    return float_res
+    return float_res * 100
 
 answer_two()
 
@@ -128,17 +128,12 @@ answer_two()
 # 
 # *This function should return a list of 20 tuples where each tuple is of the form `(token, frequency)`. The list should be sorted in descending order of frequency.*
 
-# In[28]:
+# In[8]:
+
+import operator
 
 def answer_three():
-    word = nltk.word_tokenize(moby_raw)
-    dist = nltk.FreqDist(word)
-    vocab = dist.keys()
-    twenty_frequently_token = list(vocab)[:20]
-#     print(dist[twenty_frequently_token[0]])
-    unsorted_result = [(x,dist[x]) for x in twenty_frequently_token]
-    result = sorted(unsorted_result, key=lambda x: x[1], reverse=True)
-    return result
+    return sorted(text1.vocab().items(), key=operator.itemgetter(1), reverse=True)[:20]
 
 answer_three()
 
@@ -149,15 +144,10 @@ answer_three()
 # 
 # *This function should return a sorted list of the tokens that match the above constraints. To sort your list, use `sorted()`*
 
-# In[23]:
+# In[9]:
 
 def answer_four():
-    word = nltk.word_tokenize(moby_raw)
-    dist = nltk.FreqDist(word)
-    unsorted_non_repeat_result = set([(w,dist[w]) for w in word if len(w) > 5 and dist[w] > 150])
-    sorted_tuple_result = sorted(unsorted_non_repeat_result, key=lambda x: x[1], reverse=True)
-    result = [x[0] for x in sorted_tuple_result]
-    return result
+    return sorted([token for token, freq in text1.vocab().items() if len(token) > 5 and freq > 150])
 
 answer_four()
 
@@ -223,15 +213,13 @@ answer_seven()
 # 
 # *This function should return a list of tuples of the form `(part_of_speech, frequency)` sorted in descending order of frequency.*
 
-# In[16]:
+# In[10]:
 
 def answer_eight():
-    sentence = nltk.sent_tokenize(moby_raw)
-    dist = nltk.FreqDist(sentence)
-    vocab = dist.keys()
-    unsorted_list = [(s,dist[s]) for s in vocab]
-    sorted_list = sorted(unsorted_list, key=lambda x: x[1], reverse=True)[:5]
-    return sorted_list
+   from collections import Counter
+   import operator
+    
+   return sorted(Counter([tag for token, tag in nltk.pos_tag(text1)]).items(), key=operator.itemgetter(1), reverse=True)[:5]
 
 answer_eight()
 
