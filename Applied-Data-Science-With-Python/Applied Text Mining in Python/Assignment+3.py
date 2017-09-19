@@ -11,7 +11,7 @@
 # 
 # In this assignment you will explore text message data and create models to predict if a message is spam or not. 
 
-# In[1]:
+# In[3]:
 
 import pandas as pd
 import numpy as np
@@ -22,7 +22,7 @@ spam_data['target'] = np.where(spam_data['target']=='spam',1,0)
 spam_data.head(10)
 
 
-# In[2]:
+# In[4]:
 
 from sklearn.model_selection import train_test_split
 
@@ -30,6 +30,9 @@ from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(spam_data['text'], 
                                                     spam_data['target'], 
                                                     random_state=0)
+# print(X_train)
+# print('-------------------------------')
+# print(y_train)
 
 
 # ### Question 1
@@ -113,7 +116,7 @@ answer_three()
 # *This function should return a tuple of two series
 # `(smallest tf-idfs series, largest tf-idfs series)`.*
 
-# In[40]:
+# In[5]:
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -123,11 +126,13 @@ def answer_four():
     feature_names = np.array(vect.get_feature_names())
     sorted_tfidf_index = X_train_vectorized.max(0).toarray()[0].argsort()
     smallest_feature = feature_names[sorted_tfidf_index[:20]]
+    alphabetically_smallest_feature = sorted(smallest_feature, key=str.lower)
     largest_feature = feature_names[sorted_tfidf_index[:-21:-1]]
-    return smallest_feature, largest_feature
+    alphabetically_largest_feature = sorted(largest_feature, key=str.lower)
+    return alphabetically_smallest_feature, alphabetically_largest_feature
 
 
-# In[41]:
+# In[6]:
 
 answer_four()
 
@@ -140,15 +145,22 @@ answer_four()
 # 
 # *This function should return the AUC score as a float.*
 
-# In[ ]:
+# In[8]:
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import roc_auc_score
 
 def answer_five():
-    
-    
-    return #Your answer here
+    vect = TfidfVectorizer(min_df=3).fit(X_train)
+    X_train_vectorized = vect.transform(X_train)
+    model = MultinomialNB(alpha=0.1)
+    model.fit(X_train_vectorized, y_train)
+    predictions = model.predict(vect.transform(X_test))
+    return roc_auc_score(y_test, predictions)
 
 
-# In[ ]:
+# In[9]:
 
 answer_five()
 
@@ -159,15 +171,14 @@ answer_five()
 # 
 # *This function should return a tuple (average length not spam, average length spam).*
 
-# In[ ]:
+# In[4]:
 
 def answer_six():
-    
-    
-    return #Your answer here
+    spam_data['length'] = spam_data['text'].apply(lambda x: len(x))
+    return np.mean(spam_data['length'][spam_data['target'] == 0]), np.mean(spam_data['length'][spam_data['target'] == 1])
 
 
-# In[ ]:
+# In[5]:
 
 answer_six()
 
@@ -176,7 +187,7 @@ answer_six()
 # <br>
 # The following function has been provided to help you combine new features into the training data:
 
-# In[ ]:
+# In[8]:
 
 def add_feature(X, feature_to_add):
     """
@@ -195,17 +206,27 @@ def add_feature(X, feature_to_add):
 # 
 # *This function should return the AUC score as a float.*
 
-# In[ ]:
+# In[9]:
 
 from sklearn.svm import SVC
+from sklearn.metrics import roc_auc_score
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 def answer_seven():
+    vect = TfidfVectorizer(min_df=5).fit(X_train)
+    X_train_vectorized = vect.transform(X_train)
+    X_train_vectorized_with_length = add_feature(X_train_vectorized, X_train.str.len())
     
+    X_test_vectorized = vect.transform(X_test)
+    X_test_vectorized_with_length = add_feature(X_test_vectorized, X_test.str.len())
     
-    return #Your answer here
+    clf = SVC(C=10000)
+    clf.fit(X_train_vectorized_with_length, y_train)
+    y_predicted = clf.predict(X_test_vectorized_with_length)
+    return roc_auc_score(y_test, y_predicted)
 
 
-# In[ ]:
+# In[10]:
 
 answer_seven()
 
@@ -216,15 +237,14 @@ answer_seven()
 # 
 # *This function should return a tuple (average # digits not spam, average # digits spam).*
 
-# In[ ]:
+# In[13]:
 
 def answer_eight():
-    
-    
-    return #Your answer here
+    spam_data['length'] = spam_data['text'].apply(lambda x: len(''.join([a for a in x if a.isdigit()])))
+    return np.mean(spam_data['length'][spam_data['target'] == 0]), np.mean(spam_data['length'][spam_data['target'] == 1])
 
 
-# In[ ]:
+# In[14]:
 
 answer_eight()
 
@@ -241,17 +261,31 @@ answer_eight()
 # 
 # *This function should return the AUC score as a float.*
 
-# In[ ]:
+# In[15]:
 
 from sklearn.linear_model import LogisticRegression
 
 def answer_nine():
-    
-    
-    return #Your answer here
+    vectorizer = TfidfVectorizer(min_df=5, ngram_range=[1,3])
+
+    X_train_transformed = vectorizer.fit_transform(X_train)
+    X_train_transformed_with_length = add_feature(X_train_transformed, [X_train.str.len(),
+                                                                        X_train.apply(lambda x: len(''.join([a for a in x if a.isdigit()])))])
+
+    X_test_transformed = vectorizer.transform(X_test)
+    X_test_transformed_with_length = add_feature(X_test_transformed, [X_test.str.len(),
+                                                                      X_test.apply(lambda x: len(''.join([a for a in x if a.isdigit()])))])
+
+    clf = LogisticRegression(C=100)
+
+    clf.fit(X_train_transformed_with_length, y_train)
+
+    y_predicted = clf.predict(X_test_transformed_with_length)
+
+    return roc_auc_score(y_test, y_predicted)
 
 
-# In[ ]:
+# In[16]:
 
 answer_nine()
 
@@ -264,15 +298,14 @@ answer_nine()
 # 
 # *This function should return a tuple (average # non-word characters not spam, average # non-word characters spam).*
 
-# In[ ]:
+# In[8]:
 
 def answer_ten():
-    
-    
-    return #Your answer here
+    spam_data['length'] = spam_data['text'].str.findall(r'(\W)').str.len()
+    return np.mean(spam_data['length'][spam_data['target']==0]),np.mean(spam_data['length'][spam_data['target']==1])
 
 
-# In[ ]:
+# In[9]:
 
 answer_ten()
 
@@ -301,10 +334,15 @@ answer_ten()
 
 # In[ ]:
 
+from sklearn.feature_extraction.text import CountVectorizer
+
 def answer_eleven():
+    vect = CountVectorizer(min_df=5, ngram_range=(2, 5), analyzer='char_wb').fit(X_train)
+    X_train_transformed = vect.transform(X_train)
+    X_train_transformed_with_length = add_feature(X_train_transform, [X_train.str.len(),X_train.apply(lambda x: len(''.join([a for a in x if a.isdigit()])), X_train.str.findall(r'(\W)').str.len()])
     
-    
-    return #Your answer here
+                                                                      
+    #     return #Your answer here
 
 
 # In[ ]:
