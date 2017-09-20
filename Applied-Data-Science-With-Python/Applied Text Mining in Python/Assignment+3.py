@@ -335,13 +335,28 @@ answer_ten()
 # In[ ]:
 
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+import numpy as np
 
 def answer_eleven():
     vect = CountVectorizer(min_df=5, ngram_range=(2, 5), analyzer='char_wb').fit(X_train)
     X_train_transformed = vect.transform(X_train)
-    X_train_transformed_with_length = add_feature(X_train_transform, [X_train.str.len(),X_train.apply(lambda x: len(''.join([a for a in x if a.isdigit()])), X_train.str.findall(r'(\W)').str.len()])
+    X_train_transformed_with_length = add_feature(X_train_transformed, [X_train.str.len(),X_train.apply(lambda x: len(''.join([a for a in x if a.isdigit()])), X_train.str.findall(r'(\W)').str.len()])
     
-                                                                      
+    X_test_transformed = vect.transform(X_test)
+    X_test_transformed_with_length = add_feature(X_test_transformed, [X_train.str.len(),X_train.apply(lambda x: len(''.join([a for a in x if a.isdigit()])), X_train.str.findall(r'(\W)').str.len()])                                                  
+    
+    clf = LogisticRegression(C=100)
+    clf.fit(X_train_transformed_with_length, y_train)                                                    
+    y_predicted = clf.predict(X_test_transformed_with_length)                                                               
+    roc_score = roc_auc_score(y_test, y_predicted)                                                              
+    
+    feature_names = np.array(vect.get_feature_names())
+    sorted_coef_index = model.coef_[0].argsort()
+    ten_smallest_coef = feature_names[sorted_coef_index[:10]]
+    ten_largest_coef = feature_names[sorted_coef_index[:-11:-1]]
+    
     #     return #Your answer here
 
 
