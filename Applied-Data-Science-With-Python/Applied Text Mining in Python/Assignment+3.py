@@ -30,24 +30,22 @@ from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(spam_data['text'], 
                                                     spam_data['target'], 
                                                     random_state=0)
-# print(X_train)
-# print('-------------------------------')
-# print(y_train)
 
 
 # ### Question 1
 # What percentage of the documents in `spam_data` are spam?
 
-# In[10]:
+# In[7]:
 
 def answer_one():
-    total_length = len(spam_data['target'])
-    spam_length = len(np.where(spam_data['target'] == 1))
+    
+    total_length = len(spam_data)
+    spam_length = len(spam_data[spam_data['target'] == 1])
     result = (spam_length / total_length) * 100
     return result
 
 
-# In[11]:
+# In[8]:
 
 answer_one()
 
@@ -60,7 +58,7 @@ answer_one()
 # 
 # *This function should return a string.*
 
-# In[31]:
+# In[11]:
 
 from sklearn.feature_extraction.text import CountVectorizer
 
@@ -70,7 +68,7 @@ def answer_two():
     return result
 
 
-# In[32]:
+# In[15]:
 
 answer_two()
 
@@ -83,7 +81,7 @@ answer_two()
 # 
 # *This function should return the AUC score as a float.*
 
-# In[35]:
+# In[16]:
 
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import roc_auc_score
@@ -98,7 +96,7 @@ def answer_three():
     return roc_auc_score(y_test, predictions)
 
 
-# In[36]:
+# In[17]:
 
 answer_three()
 
@@ -116,23 +114,25 @@ answer_three()
 # *This function should return a tuple of two series
 # `(smallest tf-idfs series, largest tf-idfs series)`.*
 
-# In[5]:
+# In[23]:
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 def answer_four():
-    vect = TfidfVectorizer().fit(X_train)
-    X_train_vectorized = vect.transform(X_train)
-    feature_names = np.array(vect.get_feature_names())
-    sorted_tfidf_index = X_train_vectorized.max(0).toarray()[0].argsort()
-    smallest_feature = feature_names[sorted_tfidf_index[:20]]
-    alphabetically_smallest_feature = sorted(smallest_feature, key=str.lower)
-    largest_feature = feature_names[sorted_tfidf_index[:-21:-1]]
-    alphabetically_largest_feature = sorted(largest_feature, key=str.lower)
-    return alphabetically_smallest_feature, alphabetically_largest_feature
+    import operator
+    
+    vectorizer = TfidfVectorizer()
+    X_train_transformed = vectorizer.fit_transform(X_train)
+    
+    feature_names = vectorizer.get_feature_names()
+    idfs = vectorizer.idf_
+    names_idfs = list(zip(feature_names, idfs))
+    
+    smallest = sorted(names_idfs, key=operator.itemgetter(1))[:20]
+    
 
 
-# In[6]:
+# In[24]:
 
 answer_four()
 
@@ -187,7 +187,7 @@ answer_six()
 # <br>
 # The following function has been provided to help you combine new features into the training data:
 
-# In[8]:
+# In[9]:
 
 def add_feature(X, feature_to_add):
     """
@@ -332,7 +332,7 @@ answer_ten()
 # 
 # *This function should return a tuple `(AUC score as a float, smallest coefs list, largest coefs list)`.*
 
-# In[ ]:
+# In[14]:
 
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -342,25 +342,30 @@ import numpy as np
 def answer_eleven():
     vect = CountVectorizer(min_df=5, ngram_range=(2, 5), analyzer='char_wb').fit(X_train)
     X_train_transformed = vect.transform(X_train)
-    X_train_transformed_with_length = add_feature(X_train_transformed, [X_train.str.len(),X_train.apply(lambda x: len(''.join([a for a in x if a.isdigit()])), X_train.str.findall(r'(\W)').str.len()])
+    X_train_transformed_with_length = add_feature(X_train_transformed, [X_train.str.len(),X_train.apply(lambda x: len(''.join([a for a in x if a.isdigit()]))), X_train.str.findall(r'(\W)').str.len()])
     
     X_test_transformed = vect.transform(X_test)
-    X_test_transformed_with_length = add_feature(X_test_transformed, [X_train.str.len(),X_train.apply(lambda x: len(''.join([a for a in x if a.isdigit()])), X_train.str.findall(r'(\W)').str.len()])                                                  
+    X_test_transformed_with_length = add_feature(X_test_transformed, [X_test.str.len(),X_test.apply(lambda x: len(''.join([a for a in x if a.isdigit()]))), X_test.str.findall(r'(\W)').str.len()])                                                  
     
     clf = LogisticRegression(C=100)
     clf.fit(X_train_transformed_with_length, y_train)                                                    
     y_predicted = clf.predict(X_test_transformed_with_length)                                                               
     roc_score = roc_auc_score(y_test, y_predicted)                                                              
     
-    feature_names = np.array(vect.get_feature_names())
-    sorted_coef_index = model.coef_[0].argsort()
+    feature_names = np.array(vect.get_feature_names() + ['length_of_doc', 'digit_count', 'non_word_char_count'])
+    sorted_coef_index = clf.coef_[0].argsort()
     ten_smallest_coef = feature_names[sorted_coef_index[:10]]
     ten_largest_coef = feature_names[sorted_coef_index[:-11:-1]]
-    
-    #     return #Your answer here
+                                                                      
+    return roc_score, ten_smallest_coef, ten_largest_coef
+
+
+# In[15]:
+
+answer_eleven()
 
 
 # In[ ]:
 
-answer_eleven()
+
 
