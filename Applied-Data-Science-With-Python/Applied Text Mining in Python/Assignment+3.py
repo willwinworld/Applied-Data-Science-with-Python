@@ -117,7 +117,8 @@ answer_three()
 # In[23]:
 
 from sklearn.feature_extraction.text import TfidfVectorizer
-
+# The Series of smallest tf-idfs did not contain the
+# expected words.Function answer_four was answered incorrectly
 def answer_four():
     import operator
     
