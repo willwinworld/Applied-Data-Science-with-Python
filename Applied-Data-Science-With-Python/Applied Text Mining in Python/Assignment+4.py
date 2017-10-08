@@ -106,7 +106,7 @@ def document_path_similarity(doc1, doc2):
     return (similarity_score(synsets1, synsets2) + similarity_score(synsets2, synsets1)) / 2
 
 
-# In[9]:
+# In[6]:
 
 import numpy as np
 import nltk
@@ -143,29 +143,78 @@ def doc_to_synsets(doc):
         doc_to_synsets('Fish are nvqjp friends.')
         Out: [Synset('fish.n.01'), Synset('be.v.01'), Synset('friend.n.01')]
     """
-    tagged = pos_tag(word_tokenize(doc))
-    synsets = []
-    lemmatzr = WordNetLemmatizer()
-    
-    for token in tagged:
-        print(token)
-        wn_tag = convert_tag(token[1])
-        print(wn_tag)
-        if not wn_tag:
-            continue
-        else:
-            lemma = lemmatzr.lemmatize(token[0], pos=wn_tag)
-            synsets.append(wn.synsets(lemma, pos=wn_tag)[0])
-        
-        
-    # Your Code Here
-    
-    return synsets
+    token = nltk.word_tokenize(doc)
+    tag = pos_tag(token)
+    after_convert = []
+    for item in tag:
+        after_convert.append((item[0], convert_tag(item[1])))
+    result = []
+    for item in after_convert:
+        if item[1]:
+            synset = wn.synsets(item[0], item[1])
+            if len(synset) != 0:
+                result.append(wn.synsets(item[0], item[1])[0])
+    return result
 
 
 if __name__ == '__main__':
-    doc_to_synsets("This is a function to test document_path_similarity.")
+    doc_to_synsets("Fish are nvqjp friends.")
     
+
+
+# In[20]:
+
+import numpy as np
+import nltk
+from nltk.corpus import wordnet as wn
+import pandas as pd
+from itertools import product
+
+def similarity_score(s1, s2):
+    """
+    要完成
+    Calculate the normalized similarity score of s1 onto s2
+
+    For each synset in s1, finds the synset in s2 with the largest similarity value.
+    Sum of all of the largest similarity values and normalize this value by dividing it by the
+    number of largest similarity values found.
+
+    Args:
+        s1, s2: list of synsets from doc_to_synsets
+
+    Returns:
+        normalized similarity score of s1 onto s2
+
+    Example:
+        synsets1 = doc_to_synsets('I like cats')
+        synsets2 = doc_to_synsets('I like dogs')
+        similarity_score(synsets1, synsets2)
+        Out: 0.73333333333333339
+    """
+    s1 = doc_to_synsets('I like cats')
+    s2 = doc_to_synsets('I like dogs')
+    largest = []
+    for item1 in s1:
+        max = 0
+        for item2 in s2:
+            similarity = wn.wup_similarity(item1, item2)
+            if similarity:
+                if similarity > max:
+                    max = similarity
+        largest.append(max)
+        max = 0
+    score = sum(largest) / len(largest)
+    return score
+
+
+
+if __name__ == '__main__':
+    similarity_score('test1', 'test2')
+#     synset1 = doc_to_synsets('I like cats')
+#     synset2 = doc_to_synsets('I like dogs')
+#     print(synset1)
+#     print(synset2)
+#     similarity_score(synset1, synset2)
 
 
 # ### test_document_path_similarity
