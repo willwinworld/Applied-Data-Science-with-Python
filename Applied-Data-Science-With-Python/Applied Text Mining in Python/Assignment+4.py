@@ -339,7 +339,113 @@ if __name__ == '__main__':
 # 
 # *This function should return the similarity score as a float.*
 
-# In[26]:
+# In[10]:
+
+import numpy as np
+import nltk
+from nltk.corpus import wordnet as wn
+import pandas as pd
+from nltk import pos_tag, word_tokenize
+
+def convert_tag(tag):
+    """Convert the tag given by nltk.pos_tag to the tag used by wordnet.synsets"""
+    
+    tag_dict = {'N': 'n', 'J': 'a', 'R': 'r', 'V': 'v'}
+    try:
+        return tag_dict[tag[0]]
+    except KeyError:
+        return None
+
+def doc_to_synsets(doc):
+    """
+    要完成
+    Returns a list of synsets in document.
+
+    Tokenizes and tags the words in the document doc.
+    Then finds the first synset for each word/tag combination.
+    If a synset is not found for that combination it is skipped.
+
+    Args:
+        doc: string to be converted
+
+    Returns:
+        list of synsets
+
+    Example:
+        doc_to_synsets('Fish are nvqjp friends.')
+        Out: [Synset('fish.n.01'), Synset('be.v.01'), Synset('friend.n.01')]
+    """
+    token = nltk.word_tokenize(doc)
+    tag = pos_tag(token)
+    after_convert = []
+    for item in tag:
+        after_convert.append((item[0], convert_tag(item[1])))
+    result = []
+    for item in after_convert:
+        if item[1]:
+            synset = wn.synsets(item[0], item[1])
+            if len(synset) != 0:
+                result.append(wn.synsets(item[0], item[1])[0])
+    return result
+
+import numpy as np
+import nltk
+from nltk.corpus import wordnet as wn
+import pandas as pd
+from itertools import product
+
+def similarity_score(s1, s2):
+    """
+    要完成
+    Calculate the normalized similarity score of s1 onto s2
+
+    For each synset in s1, finds the synset in s2 with the largest similarity value.
+    Sum of all of the largest similarity values and normalize this value by dividing it by the
+    number of largest similarity values found.
+
+    Args:
+        s1, s2: list of synsets from doc_to_synsets
+
+    Returns:
+        normalized similarity score of s1 onto s2
+
+    Example:
+        synsets1 = doc_to_synsets('I like cats')
+        synsets2 = doc_to_synsets('I like dogs')
+        similarity_score(synsets1, synsets2)
+        Out: 0.73333333333333339
+    """
+    s1 = doc_to_synsets('I like cats')
+    s2 = doc_to_synsets('I like dogs')
+    outer = []
+    for item1 in s1:
+        inner = []
+        for item2 in s2:
+            inner.append(item2.path_similarity(item1))
+        outer.append(max([x for x in inner if x is not None]))
+    score = sum(outer) / len(outer)
+    return score
+
+def document_path_similarity(doc1, doc2):
+    """Finds the symmetrical similarity between doc1 and doc2"""
+
+    synsets1 = doc_to_synsets(doc1)
+    print(synsets1)
+    synsets2 = doc_to_synsets(doc2)
+    print(synsets2)
+
+    return (similarity_score(synsets1, synsets2) + similarity_score(synsets2, synsets1)) / 2
+
+def test_document_path_similarity():
+    doc1 = 'This is a function to test document_path_similarity.'
+    doc2 = 'Use this function to see if your code in doc_to_synsets     and similarity_score is correct!'
+    return document_path_similarity(doc1, doc2)
+
+if __name__ == '__main__':
+    test_document_path_similarity()
+
+
+# In[11]:
 
 def test_document_path_similarity():
     doc1 = 'This is a function to test document_path_similarity.'
@@ -349,13 +455,234 @@ def test_document_path_similarity():
 test_document_path_similarity()
 
 
+# In[17]:
+
+import numpy as np
+import nltk
+from nltk.corpus import wordnet as wn
+import pandas as pd
+
+from nltk.stem import WordNetLemmatizer
+from nltk import pos_tag, word_tokenize
+
+from nltk.corpus import wordnet as wn
+
+def conversion(tag):
+    print('aaa')
+    if tag.startswith('J'):
+        return wn.ADJ
+    elif tag.startswith('N'):
+        return wn.NOUN
+    elif tag.startswith('R'):
+        return wn.ADV
+    elif tag.startswith('V'):
+        return wn.VERB
+    print('bbb')
+    return None
+
+def convert_tag(tag):
+    """Convert the tag given by nltk.pos_tag to the tag used by wordnet.synsets"""
+    
+    tag_dict = {'N': 'n', 'J': 'a', 'R': 'r', 'V': 'v'}
+    try:
+        return tag_dict[tag[0]]
+    except KeyError:
+        return None
+
+
+def doc_to_synsets(doc):
+    """
+    Returns a list of synsets in document.
+
+    Tokenizes and tags the words in the document doc.
+    Then finds the first synset for each word/tag combination.
+    If a synset is not found for that combination it is skipped.
+
+    Args:
+        doc: string to be converted
+
+    Returns:
+        list of synsets
+
+    Example:
+        doc_to_synsets('Fish are nvqjp friends.')
+        Out: [Synset('fish.n.01'), Synset('be.v.01'), Synset('friend.n.01')]
+    """
+    
+
+    # Your Code Here
+
+    part_of_speech = pos_tag(word_tokenize(doc))
+
+    lemmatzr = WordNetLemmatizer()
+    results = []
+    for token in part_of_speech:
+        wn_tag = conversion(token[1])
+        if not wn_tag:
+            continue
+
+        lemma = lemmatzr.lemmatize(token[0], pos=wn_tag)
+        synsets = wn.synsets(lemma, pos=wn_tag)
+        if len(synsets) > 0 :
+            results.append(synsets[0])
+
+    return results # Your Answer Here
+
+
+def similarity_score(s1, s2):
+    """
+    Calculate the normalized similarity score of s1 onto s2
+
+    For each synset in s1, finds the synset in s2 with the largest similarity value.
+    Sum of all of the largest similarity values and normalize this value by dividing it by the
+    number of largest similarity values found.
+
+    Args:
+        s1, s2: list of synsets from doc_to_synsets
+
+    Returns:
+        normalized similarity score of s1 onto s2
+
+    Example:
+        synsets1 = doc_to_synsets('I like cats')
+        synsets2 = doc_to_synsets('I like dogs')
+        similarity_score(synsets1, synsets2)
+        Out: 0.73333333333333339
+    """
+    
+    
+    # Your Code Here
+    s =[]
+    for i1 in s1:
+        r = []
+        for i2 in s2:
+            r.append(i1.path_similarity(i2))
+        result = [x for x in r if x is not None]
+        if len(result) > 0 :
+            s.append(max(result))
+
+    return sum(s)/len(s)# Your Answer Here
+
+
+def document_path_similarity(doc1, doc2):
+    """Finds the symmetrical similarity between doc1 and doc2"""
+
+    synsets1 = doc_to_synsets(doc1)
+    print(synsets1)
+    synsets2 = doc_to_synsets(doc2)
+    print(synsets2)
+
+    return (similarity_score(synsets1, synsets2) + similarity_score(synsets2, synsets1)) / 2
+
+
+# In[18]:
+
+def test_document_path_similarity():
+    doc1 = 'This is a function to test document_path_similarity.'
+    doc2 = 'Use this function to see if your code in doc_to_synsets     and similarity_score is correct!'
+    return document_path_similarity(doc1, doc2)
+
+if __name__ == '__main__':
+    res = test_document_path_similarity()
+    print(res)
+
+
+# In[32]:
+
+def convert_tag(tag):
+    """Convert the tag given by nltk.pos_tag to the tag used by wordnet.synsets"""
+    
+    tag_dict = {'N': 'n', 'J': 'a', 'R': 'r', 'V': 'v'}
+    try:
+        return tag_dict[tag[0]]
+    except KeyError:
+        return None
+
+def doc_to_synsets(doc):
+    """
+    要完成
+    Returns a list of synsets in document.
+
+    Tokenizes and tags the words in the document doc.
+    Then finds the first synset for each word/tag combination.
+    If a synset is not found for that combination it is skipped.
+
+    Args:
+        doc: string to be converted
+
+    Returns:
+        list of synsets
+
+    Example:
+        doc_to_synsets('Fish are nvqjp friends.')
+        Out: [Synset('fish.n.01'), Synset('be.v.01'), Synset('friend.n.01')]
+    """
+    token = nltk.word_tokenize(doc)
+    tag = pos_tag(token)
+    after_convert = []
+    for item in tag:
+        after_convert.append((item[0], convert_tag(item[1])))
+    result = []
+    for item in after_convert:
+        if item[1]:
+            synset = wn.synsets(item[0], item[1])
+            if len(synset) != 0:
+                result.append(wn.synsets(item[0], item[1])[0])
+    return result
+
+# def similarity_score(s1, s2):
+#     s =[]
+#     for i1 in s1:
+#         r = []
+#         for i2 in s2:
+#             r.append(i1.path_similarity(i2))
+#         result = [x for x in r if x is not None]
+#         if len(result) > 0 :
+#             s.append(max(result))
+
+#     return sum(s)/len(s)# Your Answer Here
+
+def similarity_score(s1, s2):
+    outer = []
+    for item1 in s1:
+        inner = []
+        for item2 in s2:
+            inner.append(item2.path_similarity(item1))
+        non_none_result = [x for x in inner if x is not None]
+        if len(non_none_result) > 0:
+            outer.append(max(non_none_result))
+    score = sum(outer) / len(outer)
+    return score
+
+def document_path_similarity(doc1, doc2):
+    synsets1 = doc_to_synsets(doc1)
+    synsets2 = doc_to_synsets(doc2)
+
+    return (similarity_score(synsets1, synsets2) + similarity_score(synsets2, synsets1)) / 2
+
+# if __name__ == '__main__':
+#     doc1 = 'This is a function to test document_path_similarity.'
+#     doc2 = 'Use this function to see if your code in doc_to_synsets \
+#     and similarity_score is correct!'
+#     res1 = doc_to_synsets(doc1)
+#     res2 = doc_to_synsets(doc2)
+#     print(res1)
+#     print(res2)
+#     res3 = similarity_score(res1, res2)
+#     print(res3)
+#     res4 = document_path_similarity(doc1, doc2)
+#     print(res4)
+#     [Synset('be.v.01'), Synset('function.n.01'), Synset('test.v.01')]
+#     [Synset('use.v.01'), Synset('function.n.01'), Synset('see.v.01'), Synset('code.n.01'), Synset('be.v.01'), Synset('correct.a.01')]
+
+
 # <br>
 # ___
 # `paraphrases` is a DataFrame which contains the following columns: `Quality`, `D1`, and `D2`.
 # 
 # `Quality` is an indicator variable which indicates if the two documents `D1` and `D2` are paraphrases of one another (1 for paraphrase, 0 for not paraphrase).
 
-# In[ ]:
+# In[24]:
 
 # Use this dataframe for questions most_similar_docs and label_accuracy
 paraphrases = pd.read_csv('paraphrases.csv')
@@ -370,13 +697,22 @@ paraphrases.head()
 # 
 # *This function should return a tuple `(D1, D2, similarity_score)`*
 
-# In[ ]:
+# In[35]:
+
+import operator
 
 def most_similar_docs():
-    
-    # Your Code Here
-    
-    return # Your Answer Here
+    df = pd.read_csv('paraphrases.csv')
+    maximum = 0
+    result = []
+    for index, row in df.iterrows():
+#         print(row['Quality'], row['D1'], row['D2'], sep='\n')
+        score = document_path_similarity(row['D1'], row['D2'])
+        result.append((row['D1'], row['D2'], score))
+    sorted_result = sorted(result, key=operator.itemgetter(2), reverse=True)
+    return sorted_result[0]
+
+most_similar_docs()
 
 
 # ### label_accuracy
